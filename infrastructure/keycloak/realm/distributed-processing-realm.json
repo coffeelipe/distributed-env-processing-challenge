@@ -1,0 +1,37 @@
+{
+  "realm": "distributed-processing",
+  "enabled": true,
+  "displayName": "Distributed Processing (local)",
+  "registrationAllowed": false,
+  "clients": [
+    {
+      "clientId": "provider-a",
+      "name": "Provider A (local)",
+      "enabled": true,
+      "clientAuthenticatorType": "client-secret",
+      "secret": "provider-a-local-secret",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "redirectUris": [],
+      "webOrigins": [],
+      "protocolMappers": [
+        {
+          "name": "provider-id",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-hardcoded-claim-mapper",
+          "config": {
+            "claim.name": "providerId",
+            "claim.value": "provider-a",
+            "jsonType.label": "String",
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ]
+}
