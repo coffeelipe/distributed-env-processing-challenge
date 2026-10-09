@@ -1,8 +1,8 @@
 package domain_test
 
 import (
+	"regexp"
 	"testing"
-	"regexp"	
 
 	"coffeelipe/distributed-processing/internal/domain"
 )
@@ -21,7 +21,6 @@ func TestParseMoney(t *testing.T) {
 		t.Fatalf("currency = %q, want BRL", got)
 	}
 }
-
 
 func TestParseMoneyMalformedInput(t *testing.T) {
 	moneyPattern := regexp.MustCompile(`^-?[0-9]+\.[0-9]{2}$`)
@@ -61,3 +60,43 @@ func TestParseMoneyMalformedInput(t *testing.T) {
 	}
 }
 
+func TestParseMoneyInt64Bounds(t *testing.T) {
+	const (
+		maxMinorUnits int64 = 1<<63 - 1
+		minMinorUnits int64 = -1 << 63
+	)
+
+	testCases := []struct {
+		name      string
+		value     string
+		wantMinor int64
+		wantError bool
+	}{
+		{name: "overflow one minor unit above maximum", value: "92233720368547758.08", wantError: true},
+		{name: "underflow one minor unit below minimum", value: "-92233720368547758.09", wantError: true},
+		{name: "grossly above maximum", value: "9223372036854775807.00", wantError: true},
+		{name: "grossly below minimum", value: "-9223372036854775808.00", wantError: true},
+		{name: "exact maximum", value: "92233720368547758.07", wantMinor: maxMinorUnits},
+		{name: "exact minimum", value: "-92233720368547758.08", wantMinor: minMinorUnits},
+		{name: "zero", value: "0.00", wantMinor: 0},
+	}
+
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			money, err := domain.ParseMoney(testCase.value, "BRL")
+			if testCase.wantError {
+				if err == nil {
+					t.Fatalf("ParseMoney accepted out-of-bounds value %q", testCase.value)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("ParseMoney rejected in-bounds value %q: %v", testCase.value, err)
+			}
+			if got := money.MinorUnits(); got != testCase.wantMinor {
+				t.Fatalf("minor units = %d, want %d", got, testCase.wantMinor)
+			}
+		})
+	}
+}
